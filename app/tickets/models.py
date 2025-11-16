@@ -1,23 +1,28 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
-from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
-from app.core.database import Base
+# in: app/tickets/models.py
+import datetime
 import uuid
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy.orm import relationship # <-- Import
+from app.core.database import Base
 
 def generate_confirmation_code():
-    """Generates a simple unique code."""
-    return str(uuid.uuid4()).split('-')[0].upper()
+    return str(uuid.uuid4().hex[:7].upper())
 
 class Ticket(Base):
     __tablename__ = "tickets"
 
     id = Column(Integer, primary_key=True, index=True)
     confirmation_code = Column(String, unique=True, index=True, default=generate_confirmation_code)
-    purchase_time = Column(DateTime(timezone=True), server_default=func.now())
+    purchase_time = Column(DateTime(timezone=True), default=lambda: datetime.datetime.now(datetime.UTC))
     
-    user_id = Column(Integer, ForeignKey("users.id"))
-    event_id = Column(Integer, ForeignKey("events.id"))
+    # This is the DB-level link to a user
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    
+    # This is the DB-level link to an event
+    event_id = Column(Integer, ForeignKey("events.id"), nullable=False)
 
-    # Relationships
+    # This links back to the User's 'tickets' list.
     owner = relationship("User", back_populates="tickets")
+   
+    # This links back to the Event's 'tickets' list.
     event = relationship("Event", back_populates="tickets")
