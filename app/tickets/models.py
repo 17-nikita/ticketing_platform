@@ -16,11 +16,18 @@ class Ticket(Base):
     purchase_time = Column(DateTime(timezone=True), default=lambda: datetime.datetime.now(datetime.UTC))
     
     # This is the DB-level link to a user
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(
+        Integer, 
+        ForeignKey("users.id", ondelete="CASCADE"), 
+        nullable=False
+    )
     
-    # This is the DB-level link to an event
-    event_id = Column(Integer, ForeignKey("events.id"), nullable=False)
-
+    # If the Event is deleted, delete this Ticket
+    event_id = Column(
+        Integer, 
+        ForeignKey("events.id", ondelete="CASCADE"), 
+        nullable=False
+    )
     # This links back to the User's 'tickets' list.
     owner = relationship("User", back_populates="tickets")
    

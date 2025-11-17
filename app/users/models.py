@@ -17,5 +17,5 @@ class User(Base):
     otp_expires_at = Column(DateTime(timezone=True), nullable=True)
 
     
-    events_managed = relationship("Event", back_populates="manager")
-    tickets = relationship("Ticket", back_populates="owner")
+    events_managed = relationship("Event", back_populates="manager",cascade="all, delete-orphan")
+    tickets = relationship("Ticket", back_populates="owner",cascade="all, delete-orphan")

@@ -14,11 +14,18 @@ class Event(Base):
     available_tickets = Column(Integer, nullable=False)
     
     # This is the DB-level link to a user
-    manager_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-
-    # This links back to the User's 'events_managed' list.
+    manager_id = Column(
+        Integer, 
+        ForeignKey("users.id", ondelete="CASCADE"), 
+        nullable=False
+    )
+    
     manager = relationship("User", back_populates="events_managed")
     
 
     # This links to the Ticket's 'event' property.
-    tickets = relationship("Ticket", back_populates="event")
+    tickets = relationship(
+        "Ticket", 
+        back_populates="event",
+        cascade="all, delete-orphan"
+    )

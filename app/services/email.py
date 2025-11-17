@@ -1,7 +1,14 @@
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 from app.core.config import settings
+from app.tickets.models import Ticket
+from app.events.models import Event
 
-# --- Setup the ConnectionConfig ---
+
+#FastMail is main class used to send emails
+#  Creates a connection using your SMTP server settings
+# Sends email messages
+
+# --- Setup the ConnectionConfig using SMTP server settings---
 conf = ConnectionConfig(
     MAIL_USERNAME = settings.MAIL_USERNAME,
     MAIL_PASSWORD = settings.MAIL_PASSWORD,
@@ -54,11 +61,7 @@ async def send_welcome_email(email_to: str):
     await fm.send_message(message)
 
 
-async def send_ticket_confirmation(
-    email_to: str, 
-    ticket: Ticket, 
-    event: Event
-):
+async def send_ticket_confirmation(email_to: str, ticket: Ticket, event: Event):
     """
     Sends the "Ticket Confirmation" email after a successful purchase.
     """

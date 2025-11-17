@@ -5,7 +5,7 @@ import random
 from datetime import datetime, timedelta, timezone
 
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["argon2", "bcrypt"], deprecated="auto")
 
 # ------------------ PASSWORD UTILS ------------------
 def hash_password(password: str):
@@ -15,9 +15,7 @@ def verify_password(password: str, hashed: str):
     return pwd_context.verify(password, hashed)
 
 
-
 def generate_otp(n: int = 6) -> str:
-    """Generates a simple n-digit plain-text OTP."""
     return "".join([str(random.randint(0, 9)) for _ in range(n)])
 
 
@@ -27,5 +25,4 @@ def otp_expiry_time(minutes: int = 10) -> datetime:
     return datetime.now(timezone.utc) + timedelta(minutes=minutes)
 
 def is_otp_expired(expiry_time: datetime) -> bool:
-    """Checks if an OTP is expired."""
     return datetime.now(timezone.utc) > expiry_time

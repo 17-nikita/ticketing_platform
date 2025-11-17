@@ -1,3 +1,5 @@
+# in: app/auth/jwt.py
+
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from pydantic import ValidationError
@@ -6,7 +8,7 @@ from app.core.config import settings
 from app.auth.schemas import TokenData
 from app.users.enums import UserRole
 
-# This is the standard error for an invalid token
+
 credentials_exception = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
     detail="Could not validate credentials",
@@ -21,7 +23,7 @@ def create_access_token(email: str, role: UserRole) -> str:
         "sub": email,
         "role": role.value,
         "exp": expire,
-        "type": "refresh" 
+        "type": "access"  # <-- THIS MUST BE "access"
     }
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM) 
     return encoded_jwt
@@ -35,7 +37,7 @@ def create_refresh_token(email: str, role: UserRole) -> str:
         "sub": email,
         "role": role.value,
         "exp": expire,
-        "type": "refresh" 
+        "type": "refresh" # <-- THIS MUST BE "refresh"
     }
     
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
@@ -56,28 +58,23 @@ def decode_token(token: str, expected_type: str) -> TokenData:
         role_str: str = payload.get("role")
         token_type: str = payload.get("type")
         
-        #  Check for missing claims
         if email is None or role_str is None or token_type is None:
             raise credentials_exception
             
-        #  Check if it's the right type of token
         if token_type != expected_type:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail=f"Invalid token type. Expected '{expected_type}'"
             )
         
-        # Validate the role and data shape using Pydantic
         token_data = TokenData(sub=email, role=role_str, type=token_type)
         return token_data
         
     except jwt.ExpiredSignatureError:
-        # Handle expired tokens
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token has expired",
             headers={"WWW-Authenticate": "Bearer"},
         )
     except (JWTError, ValidationError):
-        # Handle all other invalid token errors
         raise credentials_exception

@@ -1,6 +1,9 @@
+# in: app/core/rbac.py
+
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
+# --- 1. IMPORT THESE ---
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from app.core.database import get_db
 from app.users.models import User
@@ -8,13 +11,20 @@ from app.users.enums import UserRole
 from app.auth import jwt 
 from app.users.services import UserService 
 
+# 2. CHANGE oauth2_scheme to this:
+oauth2_scheme = HTTPBearer()
 
-# This finds the token in the 'Authorization: Bearer <token>' header.
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
-
-
-async def get_current_user(token: str = Depends(oauth2_scheme),  db: AsyncSession = Depends(get_db)) -> User:
+# 3. UPDATE get_current_user to use the new scheme
+async def get_current_user(
+    auth: HTTPAuthorizationCredentials = Depends(oauth2_scheme), 
+    db: AsyncSession = Depends(get_db)
+) -> User:
+    
+    # Extract the token string from the auth object
+    token = auth.credentials 
+    
     token_data = jwt.decode_token(token, expected_type="access")
+    
     user = await UserService.get_user_by_email(db, email=token_data.sub)
     
     if user is None:
@@ -30,7 +40,6 @@ async def get_current_user(token: str = Depends(oauth2_scheme),  db: AsyncSessio
         )
         
     return user
-
 
 
 def get_current_user_with_role(role: UserRole):  

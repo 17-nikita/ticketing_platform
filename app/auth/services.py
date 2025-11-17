@@ -5,7 +5,7 @@ from fastapi import HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.users.models import User
-from app.users.services import UserService as user_obj 
+from app.users.services import UserService 
 from app.users.schemas import UserCreate
 from app.users.enums import UserRole
 from app.auth import jwt
@@ -19,12 +19,11 @@ from app.auth.utils import (
     verify_password
 )
 
-#  authentication-related business logic.
 class AuthService:
 
     @staticmethod
     async def register_user(db: AsyncSession, payload: UserCreate):    
-        existing = await user_obj.get_user_by_email(db, payload.email)
+        existing = await UserService .get_user_by_email(db, payload.email)
         if existing:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "Email already registered")
 
@@ -44,13 +43,12 @@ class AuthService:
         await db.refresh(user)
 
         await send_otp_email(user.email, user.otp_code)
-
         return {"message": "User registered. OTP sent to email."}
 
 
     @staticmethod
     async def verify_user_otp(db: AsyncSession, payload: OTPVerify) -> Token:    
-        user = await user_obj.get_user_by_email(db, payload.email)
+        user = await UserService.get_user_by_email(db, payload.email)
         if not user:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
 
@@ -80,7 +78,7 @@ class AuthService:
     @staticmethod
     async def login_user(db: AsyncSession, form_data: OAuth2PasswordRequestForm) -> Token:
         
-        user = await user_obj.get_user_by_email(db, form_data.username)
+        user = await UserService.get_user_by_email(db, form_data.username)
         if not user:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid email or password")
 
@@ -98,7 +96,7 @@ class AuthService:
 
     @staticmethod
     async def resend_otp(db: AsyncSession, email: str):     
-        user = await user_obj.get_user_by_email(db, email)
+        user = await UserService.get_user_by_email(db, email)
         if not user:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
 
@@ -122,8 +120,7 @@ class AuthService:
             token_data.refresh_token, 
             expected_type="refresh")
         
-        
-        user = await user_obj.get_user_by_email(db, token_payload.sub)
+        user = await UserService.get_user_by_email(db, token_payload.sub)
         
         if not user or not user.is_verified:
             raise HTTPException(

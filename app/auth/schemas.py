@@ -1,12 +1,12 @@
 
 from pydantic import BaseModel, EmailStr
-from users.schemas import UserRole
+from app.users.schemas import UserRole
 
 # This is what we return on a successful login or verification
 class Token(BaseModel):
     access_token: str
     refresh_token: str 
-    token_type: str
+    token_type: str = "bearer"
 
 # This is the payload we embed in the JWT
 class TokenData(BaseModel):
@@ -14,7 +14,7 @@ class TokenData(BaseModel):
     role: UserRole
     type: str # 'access' or 'refresh'
 
-# Schema for receiving OTP data
+
 class OTPVerify(BaseModel):
     email: EmailStr
     otp: str

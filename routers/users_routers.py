@@ -10,7 +10,7 @@ from app.users.schemas import (
     AccountDelete)
 from app.users.services import UserService
 
-router = APIRouter(prefix="/users",tags=["User Management"])
+router = APIRouter(prefix="/users",tags=["Profile Management"])
 
 @router.get("/me", response_model=UserRead)
 async def read_users_me(current_user: User = Depends(get_current_user)):
