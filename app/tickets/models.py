@@ -15,21 +15,18 @@ class Ticket(Base):
     confirmation_code = Column(String, unique=True, index=True, default=generate_confirmation_code)
     purchase_time = Column(DateTime(timezone=True), default=lambda: datetime.datetime.now(datetime.UTC))
     
-    # This is the DB-level link to a user
     user_id = Column(
         Integer, 
         ForeignKey("users.id", ondelete="CASCADE"), 
         nullable=False
     )
-    
-    # If the Event is deleted, delete this Ticket
+
     event_id = Column(
         Integer, 
         ForeignKey("events.id", ondelete="CASCADE"), 
         nullable=False
     )
-    # This links back to the User's 'tickets' list.
-    owner = relationship("User", back_populates="tickets")
    
-    # This links back to the Event's 'tickets' list.
+    owner = relationship("User", back_populates="tickets")
+
     event = relationship("Event", back_populates="tickets")

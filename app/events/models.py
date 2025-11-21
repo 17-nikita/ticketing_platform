@@ -12,18 +12,14 @@ class Event(Base):
     event_time = Column(DateTime(timezone=True), nullable=False)
     total_tickets = Column(Integer, nullable=False)
     available_tickets = Column(Integer, nullable=False)
-    
-    # This is the DB-level link to a user
     manager_id = Column(
         Integer, 
         ForeignKey("users.id", ondelete="CASCADE"), 
         nullable=False
     )
-    
+    # Each event is managed by one user.
     manager = relationship("User", back_populates="events_managed")
-    
-
-    # This links to the Ticket's 'event' property.
+    #One event can have many tickets.
     tickets = relationship(
         "Ticket", 
         back_populates="event",

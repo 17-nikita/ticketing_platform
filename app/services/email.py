@@ -62,9 +62,6 @@ async def send_welcome_email(email_to: str):
 
 
 async def send_ticket_confirmation(email_to: str, ticket: Ticket, event: Event):
-    """
-    Sends the "Ticket Confirmation" email after a successful purchase.
-    """
     subject = f"Your Ticket for {event.name}!"
     body = f"""
     <p>Hi {email_to},</p>
