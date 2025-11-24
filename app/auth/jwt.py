@@ -1,4 +1,4 @@
-# in: app/auth/jwt.py
+
 
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
@@ -23,7 +23,7 @@ def create_access_token(email: str, role: UserRole) -> str:
         "sub": email,
         "role": role.value,
         "exp": expire,
-        "type": "access"  # <-- THIS MUST BE "access"
+        "type": "access" 
     }
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM) 
     return encoded_jwt
@@ -37,7 +37,7 @@ def create_refresh_token(email: str, role: UserRole) -> str:
         "sub": email,
         "role": role.value,
         "exp": expire,
-        "type": "refresh" # <-- THIS MUST BE "refresh"
+        "type": "refresh" 
     }
     
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)

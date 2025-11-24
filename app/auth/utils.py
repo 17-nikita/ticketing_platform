@@ -7,7 +7,6 @@ from datetime import datetime, timedelta, timezone
 
 pwd_context = CryptContext(schemes=["argon2", "bcrypt"], deprecated="auto")
 
-# ------------------ PASSWORD UTILS ------------------
 def hash_password(password: str):
     return pwd_context.hash(password)
 

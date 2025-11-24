@@ -1,4 +1,4 @@
-# in: app/auth/services.py
+
 from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
@@ -68,7 +68,7 @@ class AuthService:
 
         await send_welcome_email(user.email)
 
-        # Log them in and return tokens
+    
         access_token = jwt.create_access_token(email=user.email, role=user.role)
         refresh_token = jwt.create_refresh_token(email=user.email, role=user.role)
 
@@ -128,7 +128,7 @@ class AuthService:
                 "Could not validate user"
             )
         
-        # 3. Issue a new pair of tokens
+       
         access_token = jwt.create_access_token(email=user.email, role=user.role)
         refresh_token = jwt.create_refresh_token(email=user.email, role=user.role)
         
