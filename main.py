@@ -4,42 +4,45 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 from app.core.database import engine, Base
 from fastapi import status
-
-# --- Corrected Router Imports ---
-# Import the modules themselves
 from routers import auth_routers, users_routers, events_routers, tickets_routers
 
-app = FastAPI(title="Ticketing Platform API")
+from app.core.throttling import limiter
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from app.worker.config import scheduler
+from app.worker.tasks import send_event_reminders, close_expired_events 
+from contextlib import asynccontextmanager
 
-# --- Middleware (Limiter commented out) ---
-# from app.core.throttling import limiter
-# from slowapi.errors import RateLimitExceeded
-# from slowapi.middleware import SlowAPIMiddleware
-#
-# app.state.limiter = limiter
-# app.add_middleware(SlowAPIMiddleware)
-#
-# @app.exception_handler(RateLimitExceeded)
-# async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
-#     return JSONResponse(
-#         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-#         content={"detail": f"Rate limit exceeded: {exc.detail}"}
-#     )
 
-# --- Routers ---
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("App Starting... Initializing Worker.")  
+    # Register the Task
+    scheduler.add_job(send_event_reminders, "interval", minutes=60)  
+    scheduler.add_job(close_expired_events, "cron", hour=0, minute=0)
+    scheduler.start() 
+    yield  
+    print("App Stopping... Shutting down Worker.")
+    scheduler.shutdown()
+
+app = FastAPI(title="Ticketing Platform API",lifespan=lifespan)
+
+
+app.state.limiter = limiter
+
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
+
 app.include_router(auth_routers.router)
 app.include_router(users_routers.router)
 app.include_router(events_routers.router)
 app.include_router(tickets_routers.router)
 
-# --- IMPORTANT ---
-# You should NEVER use Base.metadata.create_all() in production.
-# Use 'alembic upgrade head' to create and update your tables.
+
 
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
-
-# --- MOVED ---
-# The "/profile" endpoint was here, but it belongs in routers/users.py
-# I have moved it in the next step.

@@ -2,6 +2,7 @@ from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 from app.core.config import settings
 from app.tickets.models import Ticket
 from app.events.models import Event
+from datetime import datetime
 
 
 #FastMail is main class used to send emails
@@ -77,6 +78,41 @@ async def send_ticket_confirmation(email_to: str, ticket: Ticket, event: Event):
     <p>This code was purchased on {ticket.purchase_time.strftime('%B %d, %Y')}.</p>
     
     <p>Thank you for using the Ticketing Platform!</p>
+    """
+    
+    message = MessageSchema(
+        subject=subject,
+        recipients=[email_to],
+        body=body,
+        subtype="html"
+    )
+    
+    await fm.send_message(message)
+
+
+
+
+async def send_reminder_email(email_to: str, event_name: str, event_time: datetime, ticket_code: str):
+    subject = f"Reminder: {event_name} is tomorrow!"
+    
+    # Format the time nicely
+    formatted_time = event_time.strftime('%A, %B %d at %I:%M %p')
+
+    body = f"""
+    <div style="font-family: Arial, sans-serif; color: #333;">
+        <h2>Event Reminder ⏰</h2>
+        <p>Hi there,</p>
+        <p>This is a friendly reminder that you have a ticket for <strong>{event_name}</strong> coming up soon!</p>
+        
+        <div style="border: 1px solid #ddd; padding: 15px; border-radius: 5px; background-color: #f9f9f9;">
+            <p><strong>📅 Event:</strong> {event_name}</p>
+            <p><strong>🕒 Time:</strong> {formatted_time}</p>
+            <p><strong>🎟️ Ticket Code:</strong> <span style="font-size: 1.2em; font-weight: bold;">{ticket_code}</span></p>
+        </div>
+
+        <p>Please have your ticket code ready at the entrance.</p>
+        <p>See you there!</p>
+    </div>
     """
     
     message = MessageSchema(

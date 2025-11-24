@@ -12,6 +12,7 @@ class Event(Base):
     event_time = Column(DateTime(timezone=True), nullable=False)
     total_tickets = Column(Integer, nullable=False)
     available_tickets = Column(Integer, nullable=False)
+    status = Column(String, default="UPCOMING")
     manager_id = Column(
         Integer, 
         ForeignKey("users.id", ondelete="CASCADE"), 

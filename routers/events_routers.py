@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status,Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core import rbac 
@@ -7,6 +7,7 @@ from app.users.enums import UserRole
 from app.events.schemas import EventRead, EventCreate, EventUpdate
 from app.events.services import EventService
 from app.tickets.services import TicketService
+from app.core.throttling import limiter
 
 router = APIRouter(
     prefix="/events",
@@ -16,11 +17,13 @@ router = APIRouter(
 # --- PUBLIC ENDPOINTS  ---
 
 @router.get("/", response_model=list[EventRead])
-async def get_all_events(db: AsyncSession = Depends(get_db)):
+@limiter.limit("30/minute")
+async def get_all_events(request: Request,db: AsyncSession = Depends(get_db)):
     return await EventService.get_all_events(db)
 
 @router.get("/{event_id}", response_model=EventRead)
-async def get_event_details(event_id: int, db: AsyncSession = Depends(get_db)):
+@limiter.limit("30/minute")
+async def get_event_details(request: Request,event_id: int, db: AsyncSession = Depends(get_db)):
     return await EventService.get_event_by_id(db, event_id)
 
 # --- 'EVENT_MANAGER' ROLE ENDPOINTS ---
@@ -29,7 +32,8 @@ async def get_event_details(event_id: int, db: AsyncSession = Depends(get_db)):
     "/create", 
     response_model=EventRead, 
     status_code=status.HTTP_201_CREATED)
-async def create_event(
+@limiter.limit("5/minute")
+async def create_event(request: Request,
     event_data: EventCreate,
     db: AsyncSession = Depends(get_db),
     current_manager: User = Depends(
@@ -38,8 +42,10 @@ async def create_event(
     return await EventService.create_event(
         db=db, event_data=event_data, manager=current_manager)
 
-@router.put("/update/{event_id}", response_model=EventRead)
+@router.patch("/update/{event_id}", response_model=EventRead)
+@limiter.limit("10/minute")
 async def update_event(
+    request: Request,
     event_id: int,
     update_data: EventUpdate,
     db: AsyncSession = Depends(get_db),
@@ -56,7 +62,9 @@ async def update_event(
     )
 
 @router.delete("/delete/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("10/minute")
 async def delete_event(
+    request: Request,
     event_id: int,
     db: AsyncSession = Depends(get_db),
     current_manager: User = Depends(
