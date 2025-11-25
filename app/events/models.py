@@ -1,6 +1,6 @@
-# in: app/events/models.py
+
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
-from sqlalchemy.orm import relationship # <-- Import
+from sqlalchemy.orm import relationship 
 from app.core.database import Base
 
 class Event(Base):

@@ -35,7 +35,7 @@ async def send_event_reminders():
     
         for event in upcoming_events:
             logger.info(f" Found Event: {event.name} (ID: {event.id})")     
-            # Fetch tickets and load the User (owner)
+            # Fetch tickets and load the User
             ticket_query = await db.execute(
                 select(Ticket)
                 .where(Ticket.event_id == event.id)
@@ -63,7 +63,7 @@ async def send_event_reminders():
 
 
 
-# ---CLEANUP  ---
+
 """
     Runs once a day.
     Finds events where date < NOW and status is still 'UPCOMING'.

@@ -12,10 +12,8 @@ class EventCreate(BaseModel):
     def parse_event_time(cls, value):
         if isinstance(value, str):
             try:
-                # Try parsing format: "YYYY-MM-DD HH:MM:SS"
                 return datetime.strptime(value, "%d-%m-%Y %I:%M %p")
             except ValueError:
-                # Fallback: Let Pydantic try to parse ISO format if the above fails
                 return value 
         return value
 

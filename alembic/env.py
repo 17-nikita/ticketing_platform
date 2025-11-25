@@ -7,7 +7,7 @@ from alembic import context
 import sys
 import os
 
-# --- This part is correct ---
+
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from app.core.config import settings 
@@ -18,32 +18,18 @@ from app.core.database import engine as async_engine
 from app.users.models import User
 from app.events.models import Event
 from app.tickets.models import Ticket
-# -----------------------------
 
-# this is the Alembic Config object, which provides
-# access to the values within the .ini file in use.
+
 config = context.config
 
-# --- This part is correct ---
+
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 target_metadata = Base.metadata
-# -----------------------------
+
 
 # Interpret the config file for Python logging.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
-
-# add your model's MetaData object here
-# for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
-
-# --- CHANGE 1: DELETE THIS LINE ---
-# This line was overriding your correct setting from above.
-# target_metadata = None 
-# ----------------------------------
-
-# ... (my_important_option) ...
 
 
 def run_migrations_offline() -> None:
@@ -53,7 +39,7 @@ def run_migrations_offline() -> None:
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
-        target_metadata=target_metadata, # This now correctly uses your Base.metadata
+        target_metadata=target_metadata, 
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
     )
@@ -122,4 +108,3 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     asyncio.run(run_migrations_online())
-#

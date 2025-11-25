@@ -1,8 +1,5 @@
-# in: app/core/rbac.py
-
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-# --- 1. IMPORT THESE ---
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from app.core.database import get_db
@@ -11,22 +8,14 @@ from app.users.enums import UserRole
 from app.auth import jwt 
 from app.users.services import UserService 
 
-# 2. CHANGE oauth2_scheme to this:
 oauth2_scheme = HTTPBearer()
 
-# 3. UPDATE get_current_user to use the new scheme
 async def get_current_user(
     auth: HTTPAuthorizationCredentials = Depends(oauth2_scheme), 
-    db: AsyncSession = Depends(get_db)
-) -> User:
-    
-    # Extract the token string from the auth object
-    token = auth.credentials 
-    
+    db: AsyncSession = Depends(get_db)) -> User:
+    token = auth.credentials  
     token_data = jwt.decode_token(token, expected_type="access")
-    
     user = await UserService.get_user_by_email(db, email=token_data.sub)
-    
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, 

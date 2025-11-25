@@ -1,8 +1,8 @@
-# in: app/tickets/models.py
+
 import datetime
 import uuid
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
-from sqlalchemy.orm import relationship # <-- Import
+from sqlalchemy.orm import relationship 
 from app.core.database import Base
 
 def generate_confirmation_code():

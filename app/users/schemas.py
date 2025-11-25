@@ -1,4 +1,4 @@
-# app/schemas.py
+
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from app.users.enums import UserRole
@@ -25,16 +25,7 @@ class PasswordChange(BaseModel):
     current_password: str
     new_password: str
 
-# For deleting your own account
+
 class AccountDelete(BaseModel):
     current_password: str
 
-
-
-# class UserVerify(BaseModel):
-#     email: EmailStr
-#     otp: str
-
-# class UserLogin(BaseModel):
-#     email: EmailStr
-#     password: str

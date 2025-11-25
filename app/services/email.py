@@ -42,9 +42,6 @@ async def send_otp_email(email_to: str, otp: str):
 
 
 async def send_welcome_email(email_to: str):
-    """
-    Sends the "Registration Successful" welcome email.
-    """
     subject = "Welcome! Your Registration is Successful"
     body = """
     <p>Welcome to the Ticketing Platform!</p>
@@ -94,20 +91,18 @@ async def send_ticket_confirmation(email_to: str, ticket: Ticket, event: Event):
 
 async def send_reminder_email(email_to: str, event_name: str, event_time: datetime, ticket_code: str):
     subject = f"Reminder: {event_name} is tomorrow!"
-    
-    # Format the time nicely
     formatted_time = event_time.strftime('%A, %B %d at %I:%M %p')
 
     body = f"""
     <div style="font-family: Arial, sans-serif; color: #333;">
-        <h2>Event Reminder ⏰</h2>
+        <h2>Event Reminder </h2>
         <p>Hi there,</p>
         <p>This is a friendly reminder that you have a ticket for <strong>{event_name}</strong> coming up soon!</p>
         
         <div style="border: 1px solid #ddd; padding: 15px; border-radius: 5px; background-color: #f9f9f9;">
-            <p><strong>📅 Event:</strong> {event_name}</p>
-            <p><strong>🕒 Time:</strong> {formatted_time}</p>
-            <p><strong>🎟️ Ticket Code:</strong> <span style="font-size: 1.2em; font-weight: bold;">{ticket_code}</span></p>
+            <p><strong> Event:</strong> {event_name}</p>
+            <p><strong> Time:</strong> {formatted_time}</p>
+            <p><strong>Ticket Code:</strong> <span style="font-size: 1.2em; font-weight: bold;">{ticket_code}</span></p>
         </div>
 
         <p>Please have your ticket code ready at the entrance.</p>

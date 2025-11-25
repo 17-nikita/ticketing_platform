@@ -1,4 +1,4 @@
-# in: app/users/models.py
+
 import datetime
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Enum
 from app.core.database import Base

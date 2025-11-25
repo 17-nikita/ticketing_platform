@@ -8,8 +8,8 @@ from app.events.models import Event
 from app.users.models import User
 from app.services.email import send_ticket_confirmation
 
-#selectinload tells the database: "While you are grabbing the tickets, 
-# please also grab the Event details associated with them right now."
+'''selectinload tells the database: "While you are grabbing the tickets, 
+    please also grab the Event details associated with them right now.'''
 class TicketService:
 
     @staticmethod
@@ -28,14 +28,14 @@ class TicketService:
         if not event:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Event not found")
 
- # Check Availability
+    
         if event.available_tickets < 1:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "Sold Out")
 
-            #Update Inventory
+           
         event.available_tickets -= 1
             
-            # Create Ticket
+        # Create Ticket
         new_ticket = Ticket(user_id=user.id, event_id=event.id)
         db.add(new_ticket)
         await db.commit()

@@ -49,7 +49,6 @@ async def update_event(
     event_id: int,
     update_data: EventUpdate,
     db: AsyncSession = Depends(get_db),
-    # GUARD: Only 'EVENT_MANAGER' roles can call this.
     current_manager: User = Depends(
         rbac.get_current_user_with_role(UserRole.EVENT_MANAGER)
     )

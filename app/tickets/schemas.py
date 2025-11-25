@@ -1,11 +1,7 @@
 from pydantic import BaseModel, ConfigDict,field_validator, field_serializer
 from datetime import datetime
 
-# # Request Schema ---
-# class TicketPurchaseRequest(BaseModel):
-#     event_id: int
 
-# Response Schemas --
 class TicketEventSummary(BaseModel):
     id: int
     name: str

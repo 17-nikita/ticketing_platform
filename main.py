@@ -19,9 +19,8 @@ from contextlib import asynccontextmanager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("App Starting... Initializing Worker.")  
-    # Register the Task
-    scheduler.add_job(send_event_reminders, "interval", minutes=60)  
-    scheduler.add_job(close_expired_events, "cron", hour=0, minute=0)
+    scheduler.add_job(send_event_reminders, "interval", minutes=60)  # runs per hour
+    scheduler.add_job(close_expired_events, "cron", hour=0, minute=0)  # runs at 12:00
     scheduler.start() 
     yield  
     print("App Stopping... Shutting down Worker.")
