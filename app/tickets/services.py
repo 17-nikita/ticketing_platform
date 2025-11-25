@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy import func
 from sqlalchemy.orm import selectinload
 from fastapi import HTTPException, status
 
@@ -16,8 +17,11 @@ class TicketService:
     async def get_user_tickets(db: AsyncSession, user: User) -> list[Ticket]:
         result = await db.execute(
             select(Ticket)
+            .join(Event, Ticket.event_id == Event.id)  # <--- 1. Join Ticket to Event
             .where(Ticket.user_id == user.id)
-            .options(selectinload(Ticket.event)) 
+            .where(Event.event_time > func.now())      # <--- 2. Filter: Only Future Events
+            .order_by(Event.event_time.asc())          
+            .options(selectinload(Ticket.event))       
         )
         return result.scalars().all()
 

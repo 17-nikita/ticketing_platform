@@ -18,10 +18,16 @@ from contextlib import asynccontextmanager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("App Starting... Initializing Worker.")  
+    print("App Starting... Initializing Worker.") 
+    scheduler.start()  
     scheduler.add_job(send_event_reminders, "interval", minutes=60)  # runs per hour
-    scheduler.add_job(close_expired_events, "cron", hour=0, minute=0)  # runs at 12:00
-    scheduler.start() 
+    scheduler.add_job(close_expired_events, "interval", minutes=10)  # runs every 10 mins
+    print("Startup: Running immediate cleanup check...")
+    try:
+        await close_expired_events()
+        await send_event_reminders()
+    except Exception as e:
+        print(f"Startup cleanup failed: {e}")
     yield  
     print("App Stopping... Shutting down Worker.")
     scheduler.shutdown()
