@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-
+from app.core.exceptions import CustomError
 from app.users.models import User
 from app.users.services import UserService 
 from app.users.schemas import UserCreate
@@ -80,10 +80,12 @@ class AuthService:
         
         user = await UserService.get_user_by_email(db, form_data.username)
         if not user:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid email or password")
+           # raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid email or password")
+            raise CustomError(message="Invalid email or password",status_code=status.HTTP_400_BAD_REQUEST)
 
         if not verify_password(form_data.password, user.password_hash):
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid email or password")
+            #raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid email or password")
+            raise CustomError(message="Invalid email or password",status_code=status.HTTP_400_BAD_REQUEST)
 
         if not user.is_verified:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "Email is not verified.")
@@ -98,10 +100,12 @@ class AuthService:
     async def resend_otp(db: AsyncSession, email: str):     
         user = await UserService.get_user_by_email(db, email)
         if not user:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
+            # raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
+            raise CustomError(message="User not found",status_code=status.HTTP_404_NOT_FOUND)
 
         if user.is_verified:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, "User already verified")
+            #raise HTTPException(status.HTTP_400_BAD_REQUEST, "User already verified")
+            raise CustomError(message="User already verified",status_code=status.HTTP_400_BAD_REQUEST)
 
         user.otp_code = generate_otp() 
         user.otp_expires_at = otp_expiry_time()
@@ -123,10 +127,11 @@ class AuthService:
         user = await UserService.get_user_by_email(db, token_payload.sub)
         
         if not user or not user.is_verified:
-            raise HTTPException(
-                status.HTTP_401_UNAUTHORIZED, 
-                "Could not validate user"
-            )
+            # raise HTTPException(
+            #     status.HTTP_401_UNAUTHORIZED, 
+            #     "Could not validate user"
+            # )
+            raise CustomError(message="Could not validate user",status_code=401)
         
        
         access_token = jwt.create_access_token(email=user.email, role=user.role)

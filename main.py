@@ -13,8 +13,16 @@ from slowapi import _rate_limit_exceeded_handler
 from app.worker.config import scheduler
 from app.worker.tasks import send_event_reminders, close_expired_events 
 from contextlib import asynccontextmanager
+import sentry_sdk
+from app.core.exceptions import CustomError, custom_error_handler
 
-
+sentry_sdk.init(
+    dsn="https://8b597a8a5b9b6c91574488f5f6c6ee8d@o4510430683201536.ingest.us.sentry.io/4510430711185408",
+    # Add data like request headers and IP for users,
+    # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
+    send_default_pii=True,
+    traces_sample_rate=1.0,
+)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -32,12 +40,14 @@ async def lifespan(app: FastAPI):
     print("App Stopping... Shutting down Worker.")
     scheduler.shutdown()
 
-app = FastAPI(title="Ticketing Platform API",lifespan=lifespan)
 
+app = FastAPI(title="Ticketing Platform API",lifespan=lifespan)
 
 app.state.limiter = limiter
 
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+app.add_exception_handler(CustomError, custom_error_handler)
 
 
 
@@ -51,3 +61,12 @@ app.include_router(tickets_routers.router)
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
+
+@app.get("/sentry-debug")
+async def trigger_error():
+    # 2. This will intentionally crash the app
+    try:
+        division_by_zero = 1 / 0
+    except Exception as e:
+        sentry_sdk.capture_exception(e)
+        print("0 divisio....")

@@ -8,6 +8,7 @@ from app.tickets.models import Ticket
 from app.events.models import Event
 from app.users.models import User
 from app.services.email import send_ticket_confirmation
+import sentry_sdk
 
 '''selectinload tells the database: "While you are grabbing the tickets, 
     please also grab the Event details associated with them right now.'''
@@ -47,6 +48,7 @@ class TicketService:
         try:
             await send_ticket_confirmation(user.email, new_ticket, event)
         except Exception as e:
+            sentry_sdk.capture_exception(e)
             print(f"Warning: Ticket sold but email failed to send. Error: {e}")
 
         return {
