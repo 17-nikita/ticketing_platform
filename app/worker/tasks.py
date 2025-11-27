@@ -10,7 +10,7 @@ from app.users.models import User
 from app.services.email import send_reminder_email
 from sqlalchemy import select, and_, update
 
-logger = logging.getLogger("uvicorn")
+logger = logging.getLogger(__name__)
 
 async def send_event_reminders():
     logger.info("WORKER: Checking for upcoming events...")

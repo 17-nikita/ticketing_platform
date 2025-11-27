@@ -1,3 +1,4 @@
+import logging # <--- Added import
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import func
@@ -11,12 +12,17 @@ from app.services.email import send_ticket_confirmation
 import sentry_sdk
 from app.core.exceptions import CustomError
 
+# <--- Initialize Logger
+logger = logging.getLogger(__name__)
+
 '''selectinload tells the database: "While you are grabbing the tickets, 
     please also grab the Event details associated with them right now.'''
 class TicketService:
 
     @staticmethod
     async def get_user_tickets(db: AsyncSession, user: User) -> list[Ticket]:
+        logger.debug(f"Fetching upcoming tickets for user {user.email} (ID: {user.id})") # <--- Log entry
+
         result = await db.execute(
             select(Ticket)
             .join(Event, Ticket.event_id == Event.id)  # <--- 1. Join Ticket to Event
@@ -25,17 +31,23 @@ class TicketService:
             .order_by(Event.event_time.asc())          
             .options(selectinload(Ticket.event))       
         )
-        return result.scalars().all()
+        tickets = result.scalars().all()
+        logger.debug(f"Found {len(tickets)} upcoming tickets for user {user.id}") # <--- Log count
+        return tickets
 
     @staticmethod
     async def buy_ticket(db: AsyncSession, event_id: int, user: User) -> dict:
+        logger.info(f"User {user.id} attempting to buy ticket for Event {event_id}") # <--- Log entry
+
         event = await db.get(Event, event_id)
        
         if not event:
-            raise CustomError(message="Event not found",status_code=status.HTTP_404_NOT_FOUND)
+            logger.warning(f"Ticket purchase failed: Event {event_id} not found") # <--- Log failure
+            raise CustomError(message="Event not found", status_code=status.HTTP_404_NOT_FOUND)
  
         if event.available_tickets < 1:
-            raise CustomError(message="Sold Out",status_code=status.HTTP_400_BAD_REQUEST)
+            logger.warning(f"Ticket purchase failed: Event {event_id} is Sold Out") # <--- Log failure
+            raise CustomError(message="Sold Out", status_code=status.HTTP_400_BAD_REQUEST)
        
         event.available_tickets -= 1
             
@@ -44,11 +56,16 @@ class TicketService:
         db.add(new_ticket)
         await db.commit()
         await db.refresh(new_ticket)
+        
+        logger.info(f"Ticket purchased successfully. ID: {new_ticket.id}, Code: {new_ticket.confirmation_code}") # <--- Log success
+
         try:
             await send_ticket_confirmation(user.email, new_ticket, event)
+            logger.info(f"Confirmation email sent to {user.email}") # <--- Log email success
         except Exception as e:
+            # We capture in Sentry AND log it to our file
             sentry_sdk.capture_exception(e)
-            print(f"Warning: Ticket sold but email failed to send. Error: {e}")
+            logger.error(f"Failed to send ticket confirmation email to {user.email}. Error: {e}", exc_info=True) # <--- Log error with traceback
 
         return {
             "message": "Ticket purchased successfully",

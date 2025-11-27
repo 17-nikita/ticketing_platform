@@ -5,7 +5,7 @@ from starlette.responses import JSONResponse
 from app.core.database import engine, Base
 from fastapi import status
 from routers import auth_routers, users_routers, events_routers, tickets_routers
-
+import logging
 from app.core.throttling import limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -15,11 +15,10 @@ from app.worker.tasks import send_event_reminders, close_expired_events
 from contextlib import asynccontextmanager
 import sentry_sdk
 from app.core.exceptions import CustomError, custom_error_handler
+from app.core.logging_config import configure_logging
 
 sentry_sdk.init(
     dsn="https://8b597a8a5b9b6c91574488f5f6c6ee8d@o4510430683201536.ingest.us.sentry.io/4510430711185408",
-    # Add data like request headers and IP for users,
-    # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
     send_default_pii=True,
     debug=True,
     traces_sample_rate=1.0,
@@ -41,6 +40,11 @@ async def lifespan(app: FastAPI):
     print("App Stopping... Shutting down Worker.")
     scheduler.shutdown()
 
+
+configure_logging()
+
+# 2. Get the logger (It is now configured!)
+logger = logging.getLogger("ticket_app")
 
 app = FastAPI(title="Ticketing Platform API",lifespan=lifespan)
 
