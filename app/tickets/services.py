@@ -9,6 +9,7 @@ from app.events.models import Event
 from app.users.models import User
 from app.services.email import send_ticket_confirmation
 import sentry_sdk
+from app.core.exceptions import CustomError
 
 '''selectinload tells the database: "While you are grabbing the tickets, 
     please also grab the Event details associated with them right now.'''
@@ -31,13 +32,11 @@ class TicketService:
         event = await db.get(Event, event_id)
        
         if not event:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, "Event not found")
-
-    
+            raise CustomError(message="Event not found",status_code=status.HTTP_404_NOT_FOUND)
+ 
         if event.available_tickets < 1:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Sold Out")
-
-           
+            raise CustomError(message="Sold Out",status_code=status.HTTP_400_BAD_REQUEST)
+       
         event.available_tickets -= 1
             
         # Create Ticket

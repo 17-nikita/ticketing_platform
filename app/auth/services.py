@@ -25,7 +25,8 @@ class AuthService:
     async def register_user(db: AsyncSession, payload: UserCreate):    
         existing = await UserService .get_user_by_email(db, payload.email)
         if existing:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Email already registered")
+            raise CustomError(message="Email already registered",status_code=status.HTTP_400_BAD_REQUEST)
+
 
         user = User(
             email=payload.email,
@@ -50,34 +51,31 @@ class AuthService:
     async def verify_user_otp(db: AsyncSession, payload: OTPVerify) -> Token:    
         user = await UserService.get_user_by_email(db, payload.email)
         if not user:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
+            raise CustomError(message="User not found",status_code=status.HTTP_404_NOT_FOUND)
+
 
         if user.is_verified:
-             raise HTTPException(status.HTTP_400_BAD_REQUEST, "User is already verified.")
+            raise CustomError(message="User is already verified.",status_code=status.HTTP_400_BAD_REQUEST)
 
         if is_otp_expired(user.otp_expires_at):
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, "OTP expired")
+            raise CustomError(message="OTP expired",status_code=status.HTTP_400_BAD_REQUEST)
+
 
         if payload.otp != user.otp_code:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid OTP")
+            raise CustomError(message="Invalid OTP",status_code=status.HTTP_400_BAD_REQUEST)
 
         user.is_verified = True
         user.otp_code = None
         user.otp_expires_at = None
         await db.commit()
-
         await send_welcome_email(user.email)
-
-    
         access_token = jwt.create_access_token(email=user.email, role=user.role)
         refresh_token = jwt.create_refresh_token(email=user.email, role=user.role)
-
         return Token(access_token=access_token, refresh_token=refresh_token)
 
 
     @staticmethod
-    async def login_user(db: AsyncSession, form_data: OAuth2PasswordRequestForm) -> Token:
-        
+    async def login_user(db: AsyncSession, form_data: OAuth2PasswordRequestForm) -> Token:    
         user = await UserService.get_user_by_email(db, form_data.username)
         if not user:
            # raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid email or password")
@@ -88,11 +86,10 @@ class AuthService:
             raise CustomError(message="Invalid email or password",status_code=status.HTTP_400_BAD_REQUEST)
 
         if not user.is_verified:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Email is not verified.")
+            raise CustomError(message="Email is not verified.",status_code=status.HTTP_400_BAD_REQUEST)
 
         access_token = jwt.create_access_token(email=user.email, role=user.role)
-        refresh_token = jwt.create_refresh_token(email=user.email, role=user.role)
-        
+        refresh_token = jwt.create_refresh_token(email=user.email, role=user.role)   
         return Token(access_token=access_token, refresh_token=refresh_token)
 
 
@@ -100,11 +97,9 @@ class AuthService:
     async def resend_otp(db: AsyncSession, email: str):     
         user = await UserService.get_user_by_email(db, email)
         if not user:
-            # raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
             raise CustomError(message="User not found",status_code=status.HTTP_404_NOT_FOUND)
 
         if user.is_verified:
-            #raise HTTPException(status.HTTP_400_BAD_REQUEST, "User already verified")
             raise CustomError(message="User already verified",status_code=status.HTTP_400_BAD_REQUEST)
 
         user.otp_code = generate_otp() 
@@ -127,13 +122,8 @@ class AuthService:
         user = await UserService.get_user_by_email(db, token_payload.sub)
         
         if not user or not user.is_verified:
-            # raise HTTPException(
-            #     status.HTTP_401_UNAUTHORIZED, 
-            #     "Could not validate user"
-            # )
             raise CustomError(message="Could not validate user",status_code=401)
         
-       
         access_token = jwt.create_access_token(email=user.email, role=user.role)
         refresh_token = jwt.create_refresh_token(email=user.email, role=user.role)
         

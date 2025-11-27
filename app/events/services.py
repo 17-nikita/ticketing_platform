@@ -4,6 +4,7 @@ from fastapi import HTTPException, status
 from app.events.models import Event
 from app.events.schemas import EventCreate, EventUpdate
 from app.users.models import User
+from app.core.exceptions import CustomError
 
 class EventService:
     @staticmethod
@@ -11,7 +12,7 @@ class EventService:
         result = await db.execute(select(Event).where(Event.id == event_id))
         event = result.scalars().first()
         if not event:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, "Event not found")
+            raise CustomError(message="Event not found",status_code=status.HTTP_404_NOT_FOUND)
         return event
 
     @staticmethod
@@ -44,10 +45,7 @@ class EventService:
         event = await EventService.get_event_by_id(db, event_id)
         # check permission
         if event.manager_id != manager.id:
-            raise HTTPException(
-                status.HTTP_403_FORBIDDEN, 
-                "You do not have permission to edit this event"
-            )
+            raise CustomError(message="You do not have permission to edit this event",status_code=status.HTTP_403_FORBIDDEN)
 
         # it convets pydantic object into python dictionary
         update_data = payload.model_dump(exclude_unset=True)
@@ -62,22 +60,18 @@ class EventService:
             
             # Validation: You cannot reduce total tickets below the amount already sold
             if new_total < tickets_sold:
-                raise HTTPException(
-                    status.HTTP_400_BAD_REQUEST,
-                    detail=f"Cannot reduce total tickets to {new_total}. {tickets_sold} tickets have already been sold."
-                )
-            
+                raise CustomError(message=f"Cannot reduce total tickets to {new_total}. {tickets_sold} tickets have already been sold.",status_code=status.HTTP_400_BAD_REQUEST)
+
             diff = new_total - old_total
             event.available_tickets += diff
 
-       
         for key, value in update_data.items():
             setattr(event, key, value)
-
         await db.commit()
         await db.refresh(event)
         return event
     
+
     @staticmethod
     async def delete_event(
         db: AsyncSession, event_id: int, manager: User):
@@ -85,10 +79,7 @@ class EventService:
 
         # check Permission
         if event.manager_id != manager.id:
-            raise HTTPException(
-                status.HTTP_403_FORBIDDEN, 
-                "You do not have permission to delete this event"
-            )
+            raise CustomError(message="You do not have permission to delete this event",status_code=status.HTTP_403_FORBIDDEN)
 
         await db.delete(event)
         await db.commit()

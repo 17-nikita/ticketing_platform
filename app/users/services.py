@@ -4,6 +4,7 @@ from fastapi import HTTPException, status
 from app.users.models import User
 from app.users.schemas import PasswordChange, AccountDelete
 from app.auth.utils import verify_password, hash_password
+from app.core.exceptions import CustomError
 
 class UserService:
     @staticmethod
@@ -27,7 +28,7 @@ class UserService:
     @staticmethod
     async def change_password(db: AsyncSession, *, user: User, payload: PasswordChange) -> dict:
         if not verify_password(payload.current_password, user.password_hash):
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Incorrect current password")
+            raise CustomError(message="Incorrect current password",status_code=status.HTTP_400_BAD_REQUEST)
         
         user.password_hash = hash_password(payload.new_password)
         await UserService.update_user(db, user) 
@@ -36,7 +37,6 @@ class UserService:
     @staticmethod
     async def delete_account(db: AsyncSession, *, user: User, payload: AccountDelete):
         if not verify_password(payload.current_password, user.password_hash):
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Incorrect password")
-        
+            raise CustomError(message="Incorrect password",status_code=status.HTTP_400_BAD_REQUEST)    
         await UserService.delete_user(db, user) 
         return {"message": "Account deleted successfully"}
