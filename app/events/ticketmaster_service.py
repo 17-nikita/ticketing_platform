@@ -8,6 +8,7 @@ from fastapi import status
 from app.events.models import Event
 from app.core.exceptions import CustomError
 from app.core.config import settings 
+import random
 
 
 logger = logging.getLogger(__name__)
@@ -20,11 +21,14 @@ class TicketmasterService:
     async def fetch_and_save_events(db: AsyncSession, manager_id: int):
         # We don't need to check "if not api_key" manually anymore.
         # Pydantic Settings guarantees it exists if the app started successfully.
+
+        random_page = random.randint(0, 5)
         # 1. Prepare Query
         params = {
             "apikey": settings.TICKETMASTER_API_KEY, 
             "classificationName": "music",
-            "size": 5,
+            "size": 10,
+            "page": random_page,
             "sort": "date,asc",
             "countryCode": "US" 
         }
