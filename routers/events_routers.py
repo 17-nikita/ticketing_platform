@@ -8,6 +8,7 @@ from app.events.schemas import EventRead, EventCreate, EventUpdate
 from app.events.services import EventService
 from app.tickets.services import TicketService
 from app.core.throttling import limiter
+from app.events.ticketmaster_service import TicketmasterService
 
 router = APIRouter(
     prefix="/events",
@@ -41,6 +42,16 @@ async def create_event(request: Request,
 
     return await EventService.create_event(
         db=db, event_data=event_data, manager=current_manager)
+
+
+@router.post("/import-ticketmaster", status_code=status.HTTP_201_CREATED)
+@limiter.limit("5/minute")
+async def import_external_events(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(rbac.get_current_user)
+):
+    return await TicketmasterService.fetch_and_save_events(db, manager_id=current_user.id)
 
 @router.patch("/update/{event_id}", response_model=EventRead)
 @limiter.limit("10/minute")

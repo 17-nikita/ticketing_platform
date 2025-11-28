@@ -3,3 +3,40 @@
 __pycache__/
 *.pyc
 *.db
+ticket_app.log
+*.log
+logs/
+# Virtual environment
+.venv/
+env/
+venv/
+*.egg-info/
+.Python
+# Compiled Python files
+__pycache__/
+*.pyc
+*.pyo
+# IDE-specific files
+.idea/
+.vscode/
+*.swp
+*.bak
+*~
+# Logs and temporary files
+*.log
+tmp/
+temp/
+# Database files (if applicable)
+*.sqlite3
+*.db
+# Configuration and sensitive files
+.env
+config.ini
+secrets.json
+# Build artifacts
+dist/
+build/
+# Testing artifacts
+.pytest_cache/
+htmlcov/
+.coverage

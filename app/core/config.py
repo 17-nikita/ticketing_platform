@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     MAIL_SERVER: str 
     MAIL_STARTTLS: bool 
     MAIL_SSL_TLS: bool 
+    TICKETMASTER_API_KEY: str
 
     model_config = SettingsConfigDict(
         env_file=".env", 

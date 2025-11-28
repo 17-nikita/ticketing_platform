@@ -21,19 +21,21 @@ class TicketService:
 
     @staticmethod
     async def get_user_tickets(db: AsyncSession, user: User) -> list[Ticket]:
-        logger.debug(f"Fetching upcoming tickets for user {user.email} (ID: {user.id})") # <--- Log entry
+        logger.debug(f"Fetching ALL tickets for user {user.email} (ID: {user.id})")
 
         result = await db.execute(
             select(Ticket)
-            .join(Event, Ticket.event_id == Event.id)  # <--- 1. Join Ticket to Event
+            .join(Event, Ticket.event_id == Event.id)
             .where(Ticket.user_id == user.id)
-            .where(Event.event_time > func.now())      # <--- 2. Filter: Only Future Events
+            .where(Event.event_time > func.now())      
             .order_by(Event.event_time.asc())          
             .options(selectinload(Ticket.event))       
         )
         tickets = result.scalars().all()
-        logger.debug(f"Found {len(tickets)} upcoming tickets for user {user.id}") # <--- Log count
+        logger.debug(f"Found {len(tickets)} tickets for user {user.id}")
         return tickets
+    
+
 
     @staticmethod
     async def buy_ticket(db: AsyncSession, event_id: int, user: User) -> dict:

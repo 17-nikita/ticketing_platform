@@ -1,15 +1,21 @@
 import logging
+from logging.handlers import RotatingFileHandler 
 
 def configure_logging():
     """
-    Setup logging configuration. 
-    This should be called once when the application starts.
+    Setup logging with Rotation.
+    Prevents the file from growing infinitely.
     """
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(levelname)s - %(message)s",
         handlers=[
-            logging.FileHandler("ticket_app.log"), # Save to file
-            logging.StreamHandler()                # Print to terminal
+            RotatingFileHandler(
+                "ticket_app.log", 
+                maxBytes=5 * 1024 * 1024, # 5 MB per file
+                backupCount=2,            # Keep the last 2 files (10 MB total max)
+                encoding="utf-8"
+            ),
+            logging.StreamHandler()                
         ]
     )
