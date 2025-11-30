@@ -1,5 +1,5 @@
 
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Text,Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship 
 from app.core.database import Base
 
@@ -10,6 +10,8 @@ class Event(Base):
     name = Column(String, nullable=False)
     description = Column(Text, nullable=True)
     event_time = Column(DateTime(timezone=True), nullable=False)
+
+    ticket_price = Column(Float, nullable=False, default=0.0)
     total_tickets = Column(Integer, nullable=False)
     available_tickets = Column(Integer, nullable=False)
     status = Column(String, default="UPCOMING")

@@ -30,3 +30,4 @@ class Ticket(Base):
     owner = relationship("User", back_populates="tickets")
 
     event = relationship("Event", back_populates="tickets")
+    stripe_session_id = Column(String, unique=True, nullable=True, index=True)

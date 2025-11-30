@@ -20,6 +20,12 @@ class Settings(BaseSettings):
     MAIL_SSL_TLS: bool 
     TICKETMASTER_API_KEY: str
 
+    STRIPE_SECRET_KEY: str
+    STRIPE_PUBLISHABLE_KEY: str
+    STRIPE_WEBHOOK_SECRET: str = "" # You will get this in the last step
+    DOMAIN: str = "http://localhost:8000" # Where your frontend/docs live
+
+
     model_config = SettingsConfigDict(
         env_file=".env", 
         env_file_encoding="utf-8",

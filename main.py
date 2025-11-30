@@ -5,6 +5,7 @@ from starlette.responses import JSONResponse
 from app.core.database import engine, Base
 from fastapi import status
 from routers import auth_routers, users_routers, events_routers, tickets_routers
+from ticketing_platform.routers import webhooks_routers
 import logging
 from app.core.throttling import limiter
 from slowapi.errors import RateLimitExceeded
@@ -56,10 +57,11 @@ app.add_exception_handler(CustomError, custom_error_handler)
 
 
 
-app.include_router(auth_routers.router)
-app.include_router(users_routers.router)
-app.include_router(events_routers.router)
-app.include_router(tickets_routers.router)
+app.include_router(auth_routers)
+app.include_router(users_routers)
+app.include_router(events_routers)
+app.include_router(tickets_routers)
+app.include_router(webhooks_routers)
 
 
 

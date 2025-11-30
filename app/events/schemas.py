@@ -7,6 +7,7 @@ class EventCreate(BaseModel):
     description: str
     event_time: datetime
     total_tickets: int
+    ticket_price: float
 
     @field_validator('event_time', mode='before')
     def parse_event_time(cls, value):
@@ -23,6 +24,7 @@ class EventUpdate(BaseModel):
     description: str | None = None
     event_time: datetime| None = None
     total_tickets: int | None = None
+    ticket_price: float | None = None
 
 
 class EventRead(BaseModel):
@@ -30,6 +32,7 @@ class EventRead(BaseModel):
     name: str
     description: str
     event_time: datetime
+    ticket_price: float 
     total_tickets: int
     available_tickets: int
     manager_id: int
