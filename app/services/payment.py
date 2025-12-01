@@ -1,6 +1,7 @@
 import stripe
 from app.core.config import settings
 
+
 # Initialize Stripe
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -31,8 +32,8 @@ def create_checkout_session(
             }],
             mode='payment',
             # Redirect URLs
-            success_url=f"{settings.DOMAIN}/docs", 
-            cancel_url=f"{settings.DOMAIN}/docs",
+            success_url=f"{settings.DOMAIN}/payment-success", 
+            cancel_url=f"{settings.DOMAIN}/payment-cancel",
             # CRITICAL: We hide the ID data here to retrieve it in the webhook
             metadata={
                 "event_id": str(event_id),

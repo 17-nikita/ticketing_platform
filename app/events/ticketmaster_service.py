@@ -87,6 +87,7 @@ class TicketmasterService:
                     name=tm_name,
                     description=description_text,
                     event_time=event_date,
+                    ticket_price=20.00,
                     total_tickets=100,      # Default value
                     available_tickets=100,  # Initially all are available
                     manager_id=manager_id,  # Assigned to the user who ran the import

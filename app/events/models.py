@@ -11,7 +11,7 @@ class Event(Base):
     description = Column(Text, nullable=True)
     event_time = Column(DateTime(timezone=True), nullable=False)
 
-    ticket_price = Column(Float, nullable=False, default=0.0)
+    ticket_price = Column(Float, nullable=False)
     total_tickets = Column(Integer, nullable=False)
     available_tickets = Column(Integer, nullable=False)
     status = Column(String, default="UPCOMING")

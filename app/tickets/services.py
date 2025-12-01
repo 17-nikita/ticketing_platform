@@ -78,31 +78,30 @@ class TicketService:
     @staticmethod
     async def finalize_ticket_creation(db: AsyncSession, event_id: int, user_id: int, stripe_session_id: str) -> Ticket:
         """
-        PHASE 2: FINALIZE (Called by Webhook)
-        Creates the ticket, decrements inventory safely, and handles idempotency.
+        FIXED: All DB operations are now inside one transaction block.
         """
         logger.info(f"Finalizing ticket for Stripe Session: {stripe_session_id}")
 
-        # --- 1. Idempotency Check ---
-        # Before doing anything, check if we already processed this webhook.
-        query = select(Ticket).where(Ticket.stripe_session_id == stripe_session_id)
-        result = await db.execute(query)
-        existing_ticket = result.scalars().first()
-
-        if existing_ticket:
-            logger.info(f"Duplicate Webhook ignored for Session {stripe_session_id}")
-            return existing_ticket 
-
-        # --- 2. Fetch User ---
-        user = await db.get(User, user_id)
-        if not user:
-            logger.error(f"Webhook failed: User {user_id} not found")
-            raise CustomError(message="User not found", status_code=status.HTTP_404_NOT_FOUND)
-
-        # --- 3. Transaction with Locking ---
+        # --- START SINGLE TRANSACTION ---
         async with db.begin():
-            # Lock the event row immediately
-            # This forces other transactions to WAIT until we are done
+            
+            # 1. Idempotency Check (Inside Transaction)
+            query = select(Ticket).where(Ticket.stripe_session_id == stripe_session_id)
+            result = await db.execute(query)
+            existing_ticket = result.scalars().first()
+
+            if existing_ticket:
+                logger.info(f"Duplicate Webhook ignored for Session {stripe_session_id}")
+                return existing_ticket 
+
+            # 2. Fetch User (Inside Transaction)
+            user = await db.get(User, user_id)
+            if not user:
+                logger.error(f"Webhook failed: User {user_id} not found")
+                # We raise exception to rollback transaction
+                raise CustomError(message="User not found", status_code=status.HTTP_404_NOT_FOUND)
+
+            # 3. Lock Event & Check Inventory (Inside Transaction)
             query = select(Event).where(Event.id == event_id).with_for_update()
             result = await db.execute(query)
             event = result.scalar_one_or_none()
@@ -111,17 +110,13 @@ class TicketService:
                 logger.error(f"Webhook failed: Event {event_id} not found")
                 raise CustomError(message="Event not found", status_code=status.HTTP_404_NOT_FOUND)
             
-            # Check inventory safely inside the lock
             if event.available_tickets < 1:
-                logger.error(f"Webhook failed: Event {event_id} is Sold Out (Race condition caught!)")
-                # TODO: Call Stripe API here to refund the user's money 
-                # stripe.Refund.create(payment_intent=...)
+                logger.error(f"Webhook failed: Sold Out")
                 raise CustomError(message="Sold Out", status_code=status.HTTP_400_BAD_REQUEST)
 
-            # Decrement Inventory
+            # 4. Update & Create (Inside Transaction)
             event.available_tickets -= 1
             
-            # Create Ticket with the session ID
             new_ticket = Ticket(
                 user_id=user.id, 
                 event_id=event.id,
@@ -129,20 +124,19 @@ class TicketService:
             )
             db.add(new_ticket)
             
-            # Transaction commits automatically here, releasing the lock
+            # The 'async with' block ends here -> AUTOMATIC COMMIT HAPPENS HERE
 
-        # --- 4. Refresh & Email ---
+        # --- AFTER COMMIT ---
+        # Now we refresh the object to get the ID and relationships for the email
         await db.refresh(new_ticket)
-        # Load the event relationship so we can use event details in the email
         await db.refresh(new_ticket, attribute_names=["event"])
 
         logger.info(f"Ticket purchased successfully. ID: {new_ticket.id}")
 
         try:
             await send_ticket_confirmation(user.email, new_ticket)
-            logger.info(f"Confirmation email sent to {user.email}")
         except Exception as e:
             sentry_sdk.capture_exception(e)
-            logger.error(f"Failed to send email. Error: {e}", exc_info=True)
+            logger.error(f"Failed to send email: {e}")
 
         return new_ticket

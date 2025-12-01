@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class EventService:
     @staticmethod
     async def get_event_by_id(db: AsyncSession, event_id: int) -> Event:
-        logger.debug(f"Fetching event details for ID: {event_id}") # <--- Log entry (Debug level is appropriate for read operations)
+        logger.debug(f"Fetching event details for ID: {event_id}")
         
         result = await db.execute(select(Event).where(Event.id == event_id))
         event = result.scalars().first()
@@ -26,7 +26,7 @@ class EventService:
     @staticmethod
     async def get_all_events(db: AsyncSession) -> list[Event]:
         logger.debug("Fetching list of all events.") # <--- Log entry
-        result = await db.execute(select(Event).order_by(Event.event_time))
+        result = await db.execute(select(Event).order_by(Event.id))
         return result.scalars().all()
 
 
@@ -42,6 +42,7 @@ class EventService:
             event_time=event_data.event_time,
             total_tickets=event_data.total_tickets,
             available_tickets=event_data.total_tickets, 
+            ticket_price=event_data.ticket_price, 
             manager_id=manager.id 
         )
         db.add(new_event)

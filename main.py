@@ -4,8 +4,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 from app.core.database import engine, Base
 from fastapi import status
-from routers import auth_routers, users_routers, events_routers, tickets_routers
-from ticketing_platform.routers import webhooks_routers
+from routers import auth_routers, users_routers, events_routers, tickets_routers, webhooks_routers,payment_ui_router
 import logging
 from app.core.throttling import limiter
 from slowapi.errors import RateLimitExceeded
@@ -21,7 +20,7 @@ from app.core.logging_config import configure_logging
 sentry_sdk.init(
     dsn="https://8b597a8a5b9b6c91574488f5f6c6ee8d@o4510430683201536.ingest.us.sentry.io/4510430711185408",
     send_default_pii=True,
-    debug=True,
+    #debug=True,
     traces_sample_rate=1.0,
 )
 
@@ -57,11 +56,12 @@ app.add_exception_handler(CustomError, custom_error_handler)
 
 
 
-app.include_router(auth_routers)
-app.include_router(users_routers)
-app.include_router(events_routers)
-app.include_router(tickets_routers)
-app.include_router(webhooks_routers)
+app.include_router(auth_routers.router)
+app.include_router(users_routers.router)
+app.include_router(events_routers.router)
+app.include_router(tickets_routers.router)
+app.include_router(webhooks_routers.router)
+app.include_router(payment_ui_router.router)
 
 
 

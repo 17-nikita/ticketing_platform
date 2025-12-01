@@ -22,7 +22,7 @@ class Settings(BaseSettings):
 
     STRIPE_SECRET_KEY: str
     STRIPE_PUBLISHABLE_KEY: str
-    STRIPE_WEBHOOK_SECRET: str = "" # You will get this in the last step
+    STRIPE_WEBHOOK_SECRET: str  # You will get this in the last step
     DOMAIN: str = "http://localhost:8000" # Where your frontend/docs live
 
 
