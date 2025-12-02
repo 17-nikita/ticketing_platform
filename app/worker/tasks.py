@@ -7,9 +7,17 @@ from app.core.database import async_session_factory
 from app.events.models import Event
 from app.tickets.models import Ticket
 from app.users.models import User
-from app.services.email import send_reminder_email
+from app.services.email import send_reminder_email,send_cart_initial_email, send_cart_followup_email
 from sqlalchemy import select, and_, update
+from celery import shared_task
+from app.core.celery_app import celery_app
+from app.core.config import settings
+import redis 
+import json
+import asyncio
 
+
+redis_client = redis.Redis.from_url(settings.REDIS_URL, decode_responses=True)
 logger = logging.getLogger(__name__)
 
 async def send_event_reminders():
@@ -97,3 +105,70 @@ async def close_expired_events():
         result = await db.execute(statement)
         await db.commit() 
         logger.info(f"Cleanup Complete. Closed {result.rowcount} events.")
+
+
+
+def revoke_task(task_id: str):
+    """Kills a scheduled task so it doesn't run."""
+    if task_id:
+        celery_app.control.revoke(task_id, terminate=True)
+
+def update_cart_task_id(user_id: int, event_id: int, new_task_id: str):
+    """
+    Updates the Redis Cart to track the NEW task ID.
+    If we don't do this, 'remove_from_cart' won't know which task to kill.
+    """
+    cart_key = f"cart:{user_id}"
+    raw_item = redis_client.hget(cart_key, str(event_id))
+    
+    if raw_item:
+        item = json.loads(raw_item)
+        item["active_task_id"] = new_task_id
+        redis_client.hset(cart_key, str(event_id), json.dumps(item))
+
+# --- TASK 1: THE INITIAL TRIGGER ---
+@celery_app.task(name="send_initial_reminder")
+def send_initial_reminder(user_id: int, event_id: int, email: str, event_name: str):
+    print(f"📧 [INITIAL REMINDER] Sending reminder to {email} for '{event_name}'")
+    
+    # 1. Run the Async Email Function
+    try:
+        asyncio.run(send_cart_initial_email(email, event_name))
+        print("✅ Email sent successfully.")
+    except Exception as e:
+        print(f"❌ Failed to send email: {e}")
+
+    # 2. Schedule the Next Step (Using your new MINS config)
+    next_eta = datetime.utcnow() + timedelta(minutes=settings.CART_FOLLOWUP_DELAY_MINS)
+    
+    new_task = send_recurring_reminder.apply_async(
+        args=[user_id, event_id, email, event_name],
+        eta=next_eta
+    )
+    
+    # Update Redis so we can kill this new task if they buy it
+    update_cart_task_id(user_id, event_id, new_task.id)
+
+
+# --- TASK 2: THE RECURSIVE LOOP ---
+@celery_app.task(name="send_recurring_reminder")
+def send_recurring_reminder(user_id: int, event_id: int, email: str, event_name: str):
+    print(f"📧 [RECURRING REMINDER] Sending follow-up to {email} for '{event_name}'")
+
+    # 1. Run the Async Email Function
+    try:
+        asyncio.run(send_cart_followup_email(email, event_name))
+        print("✅ Email sent successfully.")
+    except Exception as e:
+        print(f"❌ Failed to send email: {e}")
+    
+    # 2. Schedule SELF again (Using your new MINS config)
+    next_eta = datetime.utcnow() + timedelta(minutes=settings.CART_RECURRING_DELAY_MINS)
+    
+    new_task = send_recurring_reminder.apply_async(
+        args=[user_id, event_id, email, event_name],
+        eta=next_eta
+    )
+    
+    # Update Redis again
+    update_cart_task_id(user_id, event_id, new_task.id)

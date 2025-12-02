@@ -11,6 +11,9 @@ from app.users.models import User
 from app.services.email import send_ticket_confirmation
 import sentry_sdk
 from app.core.exceptions import CustomError
+import redis.asyncio as redis
+from app.core.redis_client import redis_pool
+from app.cart.services import CartService 
 
 # <--- Initialize Logger
 logger = logging.getLogger(__name__)
@@ -19,21 +22,21 @@ logger = logging.getLogger(__name__)
     please also grab the Event details associated with them right now.'''
 class TicketService:
 
-    @staticmethod
-    async def get_user_tickets(db: AsyncSession, user: User) -> list[Ticket]:
-        logger.debug(f"Fetching ALL tickets for user {user.email} (ID: {user.id})")
+    # @staticmethod
+    # async def get_user_tickets(db: AsyncSession, user: User) -> list[Ticket]:
+    #     logger.debug(f"Fetching ALL tickets for user {user.email} (ID: {user.id})")
 
-        result = await db.execute(
-            select(Ticket)
-            .join(Event, Ticket.event_id == Event.id)
-            .where(Ticket.user_id == user.id)
-            .where(Event.event_time > func.now())      
-            .order_by(Event.event_time.asc())          
-            .options(selectinload(Ticket.event))       
-        )
-        tickets = result.scalars().all()
-        logger.debug(f"Found {len(tickets)} tickets for user {user.id}")
-        return tickets
+    #     result = await db.execute(
+    #         select(Ticket)
+    #         .join(Event, Ticket.event_id == Event.id)
+    #         .where(Ticket.user_id == user.id)
+    #         .where(Event.event_time > func.now())      
+    #         .order_by(Event.event_time.asc())          
+    #         .options(selectinload(Ticket.event))       
+    #     )
+    #     tickets = result.scalars().all()
+    #     logger.debug(f"Found {len(tickets)} tickets for user {user.id}")
+    #     return tickets
     
 
     @staticmethod
@@ -98,7 +101,6 @@ class TicketService:
             user = await db.get(User, user_id)
             if not user:
                 logger.error(f"Webhook failed: User {user_id} not found")
-                # We raise exception to rollback transaction
                 raise CustomError(message="User not found", status_code=status.HTTP_404_NOT_FOUND)
 
             # 3. Lock Event & Check Inventory (Inside Transaction)
@@ -124,8 +126,6 @@ class TicketService:
             )
             db.add(new_ticket)
             
-            # The 'async with' block ends here -> AUTOMATIC COMMIT HAPPENS HERE
-
         # --- AFTER COMMIT ---
         # Now we refresh the object to get the ID and relationships for the email
         await db.refresh(new_ticket)
@@ -133,6 +133,23 @@ class TicketService:
 
         logger.info(f"Ticket purchased successfully. ID: {new_ticket.id}")
 
+                # --- 5. CART CLEANUP (Stop the Reminder Emails) ---
+        # We use a manual Redis connection because Webhooks don't have Dependency Injection
+        try:
+            redis_client = redis.Redis(connection_pool=redis_pool)
+            try:
+                # This removes the item from Redis AND revokes the Celery task
+                await CartService.remove_from_cart(redis_client, user_id, event_id)
+                logger.info(f"✅ Cart cleaned and reminders stopped for User {user_id}, Event {event_id}")
+            finally:
+                await redis_client.close()
+        except Exception as e:
+            # We catch errors here so the Ticket creation doesn't "fail" just because Redis failed.
+            # The user still paid, so they deserve their ticket. We just log the error.
+            logger.error(f"⚠️ Failed to clean cart after purchase: {e}")
+        # --------------------------------------------------
+
+        # 6. Send Confirmation Email
         try:
             await send_ticket_confirmation(user.email, new_ticket)
         except Exception as e:

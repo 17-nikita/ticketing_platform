@@ -16,6 +16,7 @@ from contextlib import asynccontextmanager
 import sentry_sdk
 from app.core.exceptions import CustomError, custom_error_handler
 from app.core.logging_config import configure_logging
+from routers import cart_routers
 
 sentry_sdk.init(
     dsn="https://8b597a8a5b9b6c91574488f5f6c6ee8d@o4510430683201536.ingest.us.sentry.io/4510430711185408",
@@ -60,6 +61,7 @@ app.include_router(auth_routers.router)
 app.include_router(users_routers.router)
 app.include_router(events_routers.router)
 app.include_router(tickets_routers.router)
+app.include_router(cart_routers.router)
 app.include_router(webhooks_routers.router)
 app.include_router(payment_ui_router.router)
 

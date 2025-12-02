@@ -118,3 +118,46 @@ async def send_reminder_email(email_to: str, event_name: str, event_time: dateti
     )
     
     await fm.send_message(message)
+
+
+# --- FUNCTIONS FOR CART REMINDERS ---
+
+async def send_cart_initial_email(email_to: str, event_name: str):
+    subject = "You left tickets in your cart!"
+    body = f"""
+    <div style="font-family: Arial, sans-serif; padding: 20px;">
+        <h2>Don't miss out!</h2>
+        <p>Hi there,</p>
+        <p>We noticed you added tickets for <strong>{event_name}</strong> to your cart but haven't checked out yet.</p>
+        <p>Tickets are selling fast. Secure yours now before they are gone!</p>
+        <a href="{settings.DOMAIN}/cart" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Complete Purchase</a>
+    </div>
+    """
+    
+    message = MessageSchema(
+        subject=subject,
+        recipients=[email_to],
+        body=body,
+        subtype="html"
+    )
+    await fm.send_message(message)
+
+async def send_cart_followup_email(email_to: str, event_name: str):
+    subject = f"Still interested in {event_name}?"
+    body = f"""
+    <div style="font-family: Arial, sans-serif; padding: 20px;">
+        <h2>Still interested?</h2>
+        <p>Hi,</p>
+        <p>Just a friendly reminder about the tickets for <strong>{event_name}</strong> waiting in your cart.</p>
+        <p>This event is getting closer. Don't let your spot get taken!</p>
+        <a href="{settings.DOMAIN}/cart" style="background-color: #008CBA; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Go to Cart</a>
+    </div>
+    """
+    
+    message = MessageSchema(
+        subject=subject,
+        recipients=[email_to],
+        body=body,
+        subtype="html"
+    )
+    await fm.send_message(message)

@@ -22,7 +22,7 @@ def create_checkout_session(
             customer_email=user_email,
             line_items=[{
                 'price_data': {
-                    'currency': 'usd', # Change to 'inr' if using Indian Stripe account
+                    'currency': 'usd', 
                     'product_data': {
                         'name': f"Ticket: {event_name}",
                     },

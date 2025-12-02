@@ -3,12 +3,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core import rbac 
 from app.users.models import User
+from app.events.models import Event 
+from sqlalchemy import select
 from app.users.enums import UserRole 
 from app.events.schemas import EventRead, EventCreate, EventUpdate
 from app.events.services import EventService
 from app.tickets.services import TicketService
 from app.core.throttling import limiter
 from app.events.ticketmaster_service import TicketmasterService
+from app.core.pagination import PaginationParams, PaginatedResponse, paginate
 
 router = APIRouter(
     prefix="/events",
@@ -17,10 +20,16 @@ router = APIRouter(
 
 # --- PUBLIC ENDPOINTS  ---
 
-@router.get("/", response_model=list[EventRead])
+@router.get("/", response_model=PaginatedResponse[EventRead])
 @limiter.limit("30/minute")
-async def get_all_events(request: Request,db: AsyncSession = Depends(get_db)):
-    return await EventService.get_all_events(db)
+async def get_all_events(
+    request: Request,
+    params: PaginationParams = Depends(), 
+    db: AsyncSession = Depends(get_db)
+):
+    query = select(Event).order_by(Event.id)
+    return await paginate(db, query, params, EventRead)
+
 
 @router.get("/{event_id}", response_model=EventRead)
 @limiter.limit("30/minute")

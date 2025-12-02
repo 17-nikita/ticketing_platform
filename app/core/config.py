@@ -25,6 +25,18 @@ class Settings(BaseSettings):
     STRIPE_WEBHOOK_SECRET: str  # You will get this in the last step
     DOMAIN: str = "http://localhost:8000" # Where your frontend/docs live
 
+    # Redis
+    REDIS_URL: str = "redis://localhost:6379/0"
+
+    # Cart Logic Config (Good practice to keep logic variables here too)
+    # CART_REMINDER_INITIAL_HOURS: int = 1
+    # CART_REMINDER_RECURRING_HOURS: int = 5
+    # CART_REMINDER_RECURRING_DELAY_MINS: int = 3
+    CART_INITIAL_DELAY_MINS: int = 2
+    CART_FOLLOWUP_DELAY_MINS: int = 3 #mins
+    CART_RECURRING_DELAY_MINS: int = 5
+   
+
 
     model_config = SettingsConfigDict(
         env_file=".env", 

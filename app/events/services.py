@@ -23,11 +23,11 @@ class EventService:
             raise CustomError(message="Event not found", status_code=status.HTTP_404_NOT_FOUND)
         return event
 
-    @staticmethod
-    async def get_all_events(db: AsyncSession) -> list[Event]:
-        logger.debug("Fetching list of all events.") # <--- Log entry
-        result = await db.execute(select(Event).order_by(Event.id))
-        return result.scalars().all()
+    # @staticmethod
+    # async def get_all_events(db: AsyncSession) -> list[Event]:
+    #     logger.debug("Fetching list of all events.") # <--- Log entry
+    #     result = await db.execute(select(Event).order_by(Event.id))
+    #     return result.scalars().all()
 
 
     @staticmethod
