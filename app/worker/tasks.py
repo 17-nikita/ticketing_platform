@@ -126,7 +126,7 @@ def update_cart_task_id(user_id: int, event_id: int, new_task_id: str):
         item["active_task_id"] = new_task_id
         redis_client.hset(cart_key, str(event_id), json.dumps(item))
 
-# --- TASK 1: THE INITIAL TRIGGER ---
+# --- THE INITIAL TRIGGER ---
 @celery_app.task(name="send_initial_reminder")
 def send_initial_reminder(user_id: int, event_id: int, email: str, event_name: str):
     print(f"📧 [INITIAL REMINDER] Sending reminder to {email} for '{event_name}'")
