@@ -35,7 +35,7 @@ async def get_my_tickets(
         select(Ticket)
         .join(Event, Ticket.event_id == Event.id)
         .where(Ticket.user_id == current_user.id)
-        .where(Event.event_time > func.now()) 
+        #.where(Event.event_time > func.now()) 
         .order_by(Event.event_time.asc())
         .options(selectinload(Ticket.event))  
     )
