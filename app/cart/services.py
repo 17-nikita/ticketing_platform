@@ -27,7 +27,7 @@ class CartService:
         
         # This returns a Task object immediately
         task = send_initial_reminder.apply_async(
-            args=[user_id, event.id, user_email, event.name], 
+            args=[user_id, event.id, user_email, event.name,event.event_time.isoformat()], 
             eta=eta_time
         )
         

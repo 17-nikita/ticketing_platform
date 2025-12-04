@@ -19,6 +19,24 @@ router = APIRouter(
     tags=["Events"]
 )
 
+
+@router.get("/my-events", response_model=PaginatedResponse[EventRead])
+@limiter.limit("30/minute")
+async def get_manager_events(
+    request: Request,
+    params: PaginationParams = Depends(), 
+    db: AsyncSession = Depends(get_db),
+    current_manager: User = Depends(
+        rbac.get_current_user_with_role(UserRole.EVENT_MANAGER)
+    )
+):
+    """
+    Fetch only the events created by the logged-in Event Manager.
+    """
+    # Filter query by the manager_id
+    query = select(Event).where(Event.manager_id == current_manager.id).order_by(Event.id.desc())
+    return await paginate(db, query, params, EventRead)
+
 # --- PUBLIC ENDPOINTS  ---
 
 @router.get("/", response_model=PaginatedResponse[EventRead])
@@ -38,6 +56,7 @@ async def get_event_details(request: Request,event_id: int, db: AsyncSession = D
     return await EventService.get_event_by_id(db, event_id)
 
 # --- 'EVENT_MANAGER' ROLE ENDPOINTS ---
+
 
 @router.post(
     "/create", 
